@@ -1,0 +1,12 @@
+.{
+    .name = "vtu_writer",
+    .version = "0.0.1",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "test",
+        "README.md",
+        "LICENSE",
+    },
+}
