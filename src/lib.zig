@@ -12,21 +12,27 @@ pub fn writeVtu(
     writeMode: Vtu.WriteMode,
 ) !void {
     switch (writeMode) {
-        .ascii => try VtuImpl.writeVtu(
-            allocator,
-            filename,
-            mesh,
-            dataSetInfo,
-            dataSetData,
-            VtuImpl.AsciiWriter.init().writer,
-        ),
-        .rawbinarycompressed => try VtuImpl.writeVtu(
-            allocator,
-            filename,
-            mesh,
-            dataSetInfo,
-            dataSetData,
-            VtuImpl.CompressedRawBinaryWriter.init().writer,
-        ),
+        .ascii => {
+            var vtuWriter = VtuImpl.AsciiWriter.init();
+            try VtuImpl.writeVtu(
+                allocator,
+                filename,
+                mesh,
+                dataSetInfo,
+                dataSetData,
+                &vtuWriter.writer,
+            );
+        },
+        .rawbinarycompressed => {
+            var vtuWriter = VtuImpl.CompressedRawBinaryWriter.init();
+            try VtuImpl.writeVtu(
+                allocator,
+                filename,
+                mesh,
+                dataSetInfo,
+                dataSetData,
+                &vtuWriter.writer,
+            );
+        },
     }
 }
