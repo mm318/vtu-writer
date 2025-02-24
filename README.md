@@ -22,7 +22,7 @@ The outputted `test_ascii.vtu` will appear as the following when opened in ParaV
 
 To build and run tests:
 ```bash
-zig build --summary all                             # debug build
+zig build test --summary all                        # debug build
 zig build -Doptimize=ReleaseSafe test --summary all # release build
 ```
 

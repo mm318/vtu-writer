@@ -1,0 +1,36 @@
+name: Test Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: '0 12 * * *' # run at UTC noon
+
+jobs:
+  build-all-targets:
+    strategy:
+      matrix:
+        include:
+          - target: 'native'
+            optimizaton: 'Debug'
+          - target: 'native'
+            optimizaton: 'ReleaseSafe'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mlugg/setup-zig@v1
+        with:
+          version: 0.14.0-dev.1911+3bf89f55c
+
+      - name: Build and Run Demo
+        run: |
+          zig build -Doptimize=${{ matrix.optimizaton }} run
+
+      - name: Build and Run Unit Tests
+        run: |
+          zig build -Doptimize=${{ matrix.optimizaton }} test --summary all
