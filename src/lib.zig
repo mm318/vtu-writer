@@ -3,35 +3,39 @@ const std = @import("std");
 const Vtu = @import("types.zig");
 const VtuImpl = @import("impl.zig");
 
+pub const IndexType = Vtu.IndexType;
+pub const CellType = Vtu.CellType;
+pub const UnstructuredMesh = Vtu.UnstructuredMesh;
+
 pub fn writeVtu(
     allocator: std.mem.Allocator,
     filename: []const u8,
-    mesh: Vtu.UnstructuredMesh,
+    mesh: UnstructuredMesh,
     dataSetInfo: []const Vtu.DataSetInfo,
     dataSetData: []const Vtu.DataSetData,
     writeMode: Vtu.WriteMode,
 ) !void {
     switch (writeMode) {
         .ascii => {
-            var vtuWriter = VtuImpl.AsciiWriter.init();
+            var writer_impl = VtuImpl.AsciiWriter.init();
             try VtuImpl.writeVtu(
                 allocator,
                 filename,
                 mesh,
                 dataSetInfo,
                 dataSetData,
-                &vtuWriter.writer,
+                .{ .ascii = &writer_impl },
             );
         },
         .rawbinarycompressed => {
-            var vtuWriter = VtuImpl.CompressedRawBinaryWriter.init();
+            var writer_impl = VtuImpl.CompressedRawBinaryWriter.init();
             try VtuImpl.writeVtu(
                 allocator,
                 filename,
                 mesh,
                 dataSetInfo,
                 dataSetData,
-                &vtuWriter.writer,
+                .{ .rawbinarycompressed = &writer_impl },
             );
         },
     }
