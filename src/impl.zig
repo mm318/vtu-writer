@@ -3,73 +3,8 @@ const std = @import("std");
 const Vtu = @import("types.zig");
 const Utils = @import("utils.zig");
 
-pub const AsciiWriter = struct {
-    pub fn init() AsciiWriter {
-        return .{};
-    }
-
-    pub fn addHeaderAttributes(self: *const AsciiWriter, attributes: *Vtu.Attributes) !void {
-        _ = self;
-        _ = attributes;
-    }
-
-    pub fn addDataAttributes(self: *const AsciiWriter, attributes: *Vtu.Attributes) !void {
-        _ = self;
-        const dataAttributes = [_]Vtu.Attribute{
-            .{ "format", .{ .str = "ascii" } },
-        };
-        try attributes.appendSlice(&dataAttributes);
-    }
-
-    pub fn writeData(
-        self: *const AsciiWriter,
-        dataType: type,
-        data: []const dataType,
-        fileWriter: std.fs.File.Writer,
-    ) !void {
-        _ = self;
-        for (data) |datum| {
-            try fileWriter.print("{d} ", .{datum});
-        }
-        try fileWriter.print("\n", .{});
-    }
-};
-
-pub const CompressedRawBinaryWriter = struct {
-    offset: usize,
-
-    pub fn init() CompressedRawBinaryWriter {
-        return .{ .offset = 0 };
-    }
-
-    pub fn addHeaderAttributes(self: *const CompressedRawBinaryWriter, attributes: *Vtu.Attributes) !void {
-        _ = self;
-        const headerAttributes = [_]Vtu.Attribute{
-            .{ "header_type", .{ .str = Utils.dataTypeString(Vtu.HeaderType) } },
-            .{ "compressor", .{ .str = "vtkZLibDataCompressor" } },
-        };
-        try attributes.appendSlice(&headerAttributes);
-    }
-
-    pub fn addDataAttributes(self: *const CompressedRawBinaryWriter, attributes: *Vtu.Attributes) !void {
-        const dataAttributes = [_]Vtu.Attribute{
-            .{ "format", .{ .str = "appended" } },
-            .{ "offset", .{ .int = @intCast(self.offset) } },
-        };
-        try attributes.appendSlice(&dataAttributes);
-    }
-
-    pub fn writeData(
-        self: *const CompressedRawBinaryWriter,
-        dataType: type,
-        data: []const dataType,
-        fileWriter: std.fs.File.Writer,
-    ) !void {
-        _ = self;
-        _ = data;
-        _ = fileWriter;
-    }
-};
+pub const AsciiWriter = @import("ascii_writer.zig").AsciiWriter;
+pub const CompressedRawBinaryWriter = @import("zlib_writer.zig").CompressedRawBinaryWriter;
 
 pub const VtuWriter = union(Vtu.WriteMode) {
     ascii: *AsciiWriter,
@@ -130,41 +65,43 @@ fn writeContent(
     dataSets: []const Vtu.DataSet,
     fileWriter: std.fs.File.Writer,
 ) !void {
-    Utils.openXmlScope(fileWriter, "UnstructuredGrid", &.{}) catch std.log.warn("unable to write to file", .{});
-    defer Utils.closeXmlScope(fileWriter, "UnstructuredGrid") catch std.log.warn("unable to write to file", .{});
-
     {
-        const pieceAttributes = [_]Vtu.Attribute{
-            .{ "NumberOfPoints", .{ .int = @intCast(mesh.numberOfPoints()) } },
-            .{ "NumberOfCells", .{ .int = @intCast(mesh.numberOfCells()) } },
-        };
-        Utils.openXmlScope(fileWriter, "Piece", &pieceAttributes) catch std.log.warn("unable to write to file", .{});
-        defer Utils.closeXmlScope(fileWriter, "Piece") catch std.log.warn("unable to write to file", .{});
+        Utils.openXmlScope(fileWriter, "UnstructuredGrid", &.{}) catch std.log.warn("unable to write to file", .{});
+        defer Utils.closeXmlScope(fileWriter, "UnstructuredGrid") catch std.log.warn("unable to write to file", .{});
 
         {
-            Utils.openXmlScope(fileWriter, "PointData", &.{}) catch std.log.warn("unable to write to file", .{});
-            defer Utils.closeXmlScope(fileWriter, "PointData") catch std.log.warn("unable to write to file", .{});
-            try writeDataSets(allocator, vtuWriter, dataSets, Vtu.DataSetType.PointData, fileWriter);
-        }
+            const pieceAttributes = [_]Vtu.Attribute{
+                .{ "NumberOfPoints", .{ .int = @intCast(mesh.numberOfPoints()) } },
+                .{ "NumberOfCells", .{ .int = @intCast(mesh.numberOfCells()) } },
+            };
+            Utils.openXmlScope(fileWriter, "Piece", &pieceAttributes) catch std.log.warn("unable to write to file", .{});
+            defer Utils.closeXmlScope(fileWriter, "Piece") catch std.log.warn("unable to write to file", .{});
 
-        {
-            Utils.openXmlScope(fileWriter, "CellData", &.{}) catch std.log.warn("unable to write to file", .{});
-            defer Utils.closeXmlScope(fileWriter, "CellData") catch std.log.warn("unable to write to file", .{});
-            try writeDataSets(allocator, vtuWriter, dataSets, Vtu.DataSetType.CellData, fileWriter);
-        }
+            {
+                Utils.openXmlScope(fileWriter, "PointData", &.{}) catch std.log.warn("unable to write to file", .{});
+                defer Utils.closeXmlScope(fileWriter, "PointData") catch std.log.warn("unable to write to file", .{});
+                try writeDataSets(allocator, vtuWriter, dataSets, Vtu.DataSetType.PointData, fileWriter);
+            }
 
-        {
-            Utils.openXmlScope(fileWriter, "Points", &.{}) catch std.log.warn("unable to write to file", .{});
-            defer Utils.closeXmlScope(fileWriter, "Points") catch std.log.warn("unable to write to file", .{});
-            try writeDataSet(allocator, vtuWriter, "", Vtu.UnstructuredMesh.DIMENSION, f64, mesh.points, fileWriter);
-        }
+            {
+                Utils.openXmlScope(fileWriter, "CellData", &.{}) catch std.log.warn("unable to write to file", .{});
+                defer Utils.closeXmlScope(fileWriter, "CellData") catch std.log.warn("unable to write to file", .{});
+                try writeDataSets(allocator, vtuWriter, dataSets, Vtu.DataSetType.CellData, fileWriter);
+            }
 
-        {
-            Utils.openXmlScope(fileWriter, "Cells", &.{}) catch std.log.warn("unable to write to file", .{});
-            defer Utils.closeXmlScope(fileWriter, "Cells") catch std.log.warn("unable to write to file", .{});
-            try writeDataSet(allocator, vtuWriter, "connectivity", 1, Vtu.IndexType, mesh.connectivity, fileWriter);
-            try writeDataSet(allocator, vtuWriter, "offsets", 1, Vtu.IndexType, mesh.offsets, fileWriter);
-            try writeDataSet(allocator, vtuWriter, "types", 1, Vtu.CellType, mesh.types, fileWriter);
+            {
+                Utils.openXmlScope(fileWriter, "Points", &.{}) catch std.log.warn("unable to write to file", .{});
+                defer Utils.closeXmlScope(fileWriter, "Points") catch std.log.warn("unable to write to file", .{});
+                try writeDataSet(allocator, vtuWriter, "", Vtu.UnstructuredMesh.DIMENSION, f64, mesh.points, fileWriter);
+            }
+
+            {
+                Utils.openXmlScope(fileWriter, "Cells", &.{}) catch std.log.warn("unable to write to file", .{});
+                defer Utils.closeXmlScope(fileWriter, "Cells") catch std.log.warn("unable to write to file", .{});
+                try writeDataSet(allocator, vtuWriter, "connectivity", 1, Vtu.IndexType, mesh.connectivity, fileWriter);
+                try writeDataSet(allocator, vtuWriter, "offsets", 1, Vtu.IndexType, mesh.offsets, fileWriter);
+                try writeDataSet(allocator, vtuWriter, "types", 1, Vtu.CellType, mesh.types, fileWriter);
+            }
         }
     }
 }
