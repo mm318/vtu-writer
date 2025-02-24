@@ -17,6 +17,9 @@ zig build run                           # debug build
 zig build -Doptimize=ReleaseSafe run    # release build
 ```
 
+The outputted `test_ascii.vtu` will appear as the following when opened in ParaView  
+![VTU Writer demo output](demo.jpg) 
+
 To build and run tests:
 ```bash
 zig build --summary all                             # debug build
