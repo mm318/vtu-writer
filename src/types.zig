@@ -41,10 +41,11 @@ pub const DataSetType = enum {
     CellData,
 };
 
-pub const DataSetInfo = struct {
+const DataSetData = []const f64;
+
+pub const DataSet = struct {
     []const u8,
     DataSetType,
     usize,
+    DataSetData,
 };
-
-pub const DataSetData = []const f64;

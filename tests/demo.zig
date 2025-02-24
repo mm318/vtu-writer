@@ -48,11 +48,21 @@ pub fn main() !void {
         .types = &types,
     };
 
+    // Create some data associated to points and cells
+    const pointData = [_]f64{ 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0 };
+    const cellData = [_]f64{ 3.2, 4.3, 5.4, 6.5, 7.6, 8.7 };
+
+    // Create tuples with (name, association, number of components, data) for each data set
+    const dataSets = [_]VtuWriter.DataSet{
+        .{ "Temperature", VtuWriter.DataSetType.PointData, 1, &pointData },
+        .{ "Conductivity", VtuWriter.DataSetType.CellData, 1, &cellData },
+    };
+
     std.log.info("Running VTU AsciiWriter...", .{});
-    try VtuWriter.writeVtu(allocator, "test_ascii.vtu", mesh, undefined, undefined, .ascii);
+    try VtuWriter.writeVtu(allocator, "test_ascii.vtu", mesh, &dataSets, .ascii);
     std.log.info("Finished running VTU AsciiWriter\n", .{});
 
     std.log.info("Running VTU CompressedRawBinaryWriter...", .{});
-    try VtuWriter.writeVtu(allocator, "test_binary.vtu", mesh, undefined, undefined, .rawbinarycompressed);
+    try VtuWriter.writeVtu(allocator, "test_binary.vtu", mesh, &dataSets, .rawbinarycompressed);
     std.log.info("Finished running VTU CompressedRawBinaryWriter\n", .{});
 }

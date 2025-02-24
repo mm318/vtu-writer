@@ -6,13 +6,14 @@ const VtuImpl = @import("impl.zig");
 pub const IndexType = Vtu.IndexType;
 pub const CellType = Vtu.CellType;
 pub const UnstructuredMesh = Vtu.UnstructuredMesh;
+pub const DataSetType = Vtu.DataSetType;
+pub const DataSet = Vtu.DataSet;
 
 pub fn writeVtu(
     allocator: std.mem.Allocator,
     filename: []const u8,
     mesh: UnstructuredMesh,
-    dataSetInfo: []const Vtu.DataSetInfo,
-    dataSetData: []const Vtu.DataSetData,
+    dataSets: []const DataSet,
     writeMode: Vtu.WriteMode,
 ) !void {
     switch (writeMode) {
@@ -22,8 +23,7 @@ pub fn writeVtu(
                 allocator,
                 filename,
                 mesh,
-                dataSetInfo,
-                dataSetData,
+                dataSets,
                 .{ .ascii = &writer_impl },
             );
         },
@@ -33,8 +33,7 @@ pub fn writeVtu(
                 allocator,
                 filename,
                 mesh,
-                dataSetInfo,
-                dataSetData,
+                dataSets,
                 .{ .rawbinarycompressed = &writer_impl },
             );
         },

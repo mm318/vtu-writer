@@ -34,9 +34,9 @@ pub fn writeXmlTag(
 
     for (attributes) |entry| {
         switch (entry[1]) {
-            Vtu.AttributeValueType.bool => |value| try writer.print(" {s}={}", .{ entry[0], value }),
-            Vtu.AttributeValueType.int => |value| try writer.print(" {s}={}", .{ entry[0], value }),
-            Vtu.AttributeValueType.float => |value| try writer.print(" {s}={}", .{ entry[0], value }),
+            Vtu.AttributeValueType.bool => |value| try writer.print(" {s}=\"{}\"", .{ entry[0], value }),
+            Vtu.AttributeValueType.int => |value| try writer.print(" {s}=\"{}\"", .{ entry[0], value }),
+            Vtu.AttributeValueType.float => |value| try writer.print(" {s}=\"{}\"", .{ entry[0], value }),
             Vtu.AttributeValueType.str => |value| try writer.print(" {s}=\"{s}\"", .{ entry[0], value }),
         }
     }

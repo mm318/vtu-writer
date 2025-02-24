@@ -29,7 +29,7 @@ pub const AsciiWriter = struct {
     ) !void {
         _ = self;
         for (data) |datum| {
-            try fileWriter.print("{} ", .{datum});
+            try fileWriter.print("{d} ", .{datum});
         }
         try fileWriter.print("\n", .{});
     }
@@ -98,8 +98,7 @@ pub fn writeVtu(
     allocator: std.mem.Allocator,
     filename: []const u8,
     mesh: Vtu.UnstructuredMesh,
-    dataSetInfo: []const Vtu.DataSetInfo,
-    dataSetData: []const Vtu.DataSetData,
+    dataSets: []const Vtu.DataSet,
     vtuWriter: VtuWriter,
 ) !void {
     const cwd = std.fs.cwd();
@@ -121,57 +120,51 @@ pub fn writeVtu(
     Utils.openXmlScope(output.writer(), "VTKFile", headerAttributes.items) catch std.log.warn("unable to write to file", .{});
     defer Utils.closeXmlScope(output.writer(), "VTKFile") catch std.log.warn("unable to write to file", .{});
 
-    try writeContent(allocator, vtuWriter, mesh, dataSetInfo, dataSetData, output.writer());
+    try writeContent(allocator, vtuWriter, mesh, dataSets, output.writer());
 }
 
 fn writeContent(
     allocator: std.mem.Allocator,
     vtuWriter: VtuWriter,
     mesh: Vtu.UnstructuredMesh,
-    dataSetInfo: []const Vtu.DataSetInfo,
-    dataSetData: []const Vtu.DataSetData,
+    dataSets: []const Vtu.DataSet,
     fileWriter: std.fs.File.Writer,
 ) !void {
-    _ = dataSetInfo;
-    _ = dataSetData;
+    Utils.openXmlScope(fileWriter, "UnstructuredGrid", &.{}) catch std.log.warn("unable to write to file", .{});
+    defer Utils.closeXmlScope(fileWriter, "UnstructuredGrid") catch std.log.warn("unable to write to file", .{});
 
     {
-        Utils.openXmlScope(fileWriter, "UnstructuredGrid", &.{}) catch std.log.warn("unable to write to file", .{});
-        defer Utils.closeXmlScope(fileWriter, "UnstructuredGrid") catch std.log.warn("unable to write to file", .{});
+        const pieceAttributes = [_]Vtu.Attribute{
+            .{ "NumberOfPoints", .{ .int = @intCast(mesh.numberOfPoints()) } },
+            .{ "NumberOfCells", .{ .int = @intCast(mesh.numberOfCells()) } },
+        };
+        Utils.openXmlScope(fileWriter, "Piece", &pieceAttributes) catch std.log.warn("unable to write to file", .{});
+        defer Utils.closeXmlScope(fileWriter, "Piece") catch std.log.warn("unable to write to file", .{});
 
         {
-            const pieceAttributes = [_]Vtu.Attribute{
-                .{ "NumberOfPoints", .{ .int = @intCast(mesh.numberOfPoints()) } },
-                .{ "NumberOfCells", .{ .int = @intCast(mesh.numberOfCells()) } },
-            };
-            Utils.openXmlScope(fileWriter, "Piece", &pieceAttributes) catch std.log.warn("unable to write to file", .{});
-            defer Utils.closeXmlScope(fileWriter, "Piece") catch std.log.warn("unable to write to file", .{});
+            Utils.openXmlScope(fileWriter, "PointData", &.{}) catch std.log.warn("unable to write to file", .{});
+            defer Utils.closeXmlScope(fileWriter, "PointData") catch std.log.warn("unable to write to file", .{});
+            try writeDataSets(allocator, vtuWriter, dataSets, Vtu.DataSetType.PointData, fileWriter);
+        }
 
-            {
-                Utils.openXmlScope(fileWriter, "PointData", &.{}) catch std.log.warn("unable to write to file", .{});
-                defer Utils.closeXmlScope(fileWriter, "PointData") catch std.log.warn("unable to write to file", .{});
-                // writeDataSets(pointData)
-            }
+        {
+            Utils.openXmlScope(fileWriter, "CellData", &.{}) catch std.log.warn("unable to write to file", .{});
+            defer Utils.closeXmlScope(fileWriter, "CellData") catch std.log.warn("unable to write to file", .{});
+            try writeDataSets(allocator, vtuWriter, dataSets, Vtu.DataSetType.CellData, fileWriter);
+        }
 
-            {
-                Utils.openXmlScope(fileWriter, "CellData", &.{}) catch std.log.warn("unable to write to file", .{});
-                defer Utils.closeXmlScope(fileWriter, "CellData") catch std.log.warn("unable to write to file", .{});
-                // writeDataSets(cellData)
-            }
+        {
+            Utils.openXmlScope(fileWriter, "Points", &.{}) catch std.log.warn("unable to write to file", .{});
+            defer Utils.closeXmlScope(fileWriter, "Points") catch std.log.warn("unable to write to file", .{});
+            try writeDataSet(allocator, vtuWriter, "", 3, f64, mesh.points, fileWriter);
+        }
 
-            {
-                Utils.openXmlScope(fileWriter, "Points", &.{}) catch std.log.warn("unable to write to file", .{});
-                defer Utils.closeXmlScope(fileWriter, "Points") catch std.log.warn("unable to write to file", .{});
-                try writeDataSet(allocator, vtuWriter, "", 3, f64, mesh.points, fileWriter);
-            }
-
-            {
-                Utils.openXmlScope(fileWriter, "Cells", &.{}) catch std.log.warn("unable to write to file", .{});
-                defer Utils.closeXmlScope(fileWriter, "Cells") catch std.log.warn("unable to write to file", .{});
-                try writeDataSet(allocator, vtuWriter, "connectivity", 1, Vtu.IndexType, mesh.connectivity, fileWriter);
-                try writeDataSet(allocator, vtuWriter, "offsets", 1, Vtu.IndexType, mesh.offsets, fileWriter);
-                try writeDataSet(allocator, vtuWriter, "types", 1, Vtu.CellType, mesh.types, fileWriter);
-            }
+        {
+            Utils.openXmlScope(fileWriter, "Cells", &.{}) catch std.log.warn("unable to write to file", .{});
+            defer Utils.closeXmlScope(fileWriter, "Cells") catch std.log.warn("unable to write to file", .{});
+            try writeDataSet(allocator, vtuWriter, "connectivity", 1, Vtu.IndexType, mesh.connectivity, fileWriter);
+            try writeDataSet(allocator, vtuWriter, "offsets", 1, Vtu.IndexType, mesh.offsets, fileWriter);
+            try writeDataSet(allocator, vtuWriter, "types", 1, Vtu.CellType, mesh.types, fileWriter);
         }
     }
 }
@@ -233,5 +226,27 @@ fn writeDataSet(
         Utils.openXmlScope(fileWriter, "DataArray", attributes.items) catch std.log.warn("unable to write to file", .{});
         defer Utils.closeXmlScope(fileWriter, "DataArray") catch std.log.warn("unable to write to file", .{});
         vtuWriter.writeData(dataType, data, fileWriter) catch std.log.warn("unable to write to file", .{});
+    }
+}
+
+fn writeDataSets(
+    allocator: std.mem.Allocator,
+    vtuWriter: VtuWriter,
+    dataSets: []const Vtu.DataSet,
+    dataSetType: Vtu.DataSetType,
+    fileWriter: std.fs.File.Writer,
+) !void {
+    for (dataSets) |dataSet| {
+        if (dataSet[1] == dataSetType) {
+            try writeDataSet(
+                allocator,
+                vtuWriter,
+                dataSet[0],
+                dataSet[2],
+                @TypeOf(dataSet[3][0]),
+                dataSet[3],
+                fileWriter,
+            );
+        }
     }
 }
