@@ -22,13 +22,14 @@ pub const IndexType = i64;
 pub const CellType = i8;
 
 pub const UnstructuredMesh = struct {
+    pub const DIMENSION = 3;
     points: []const f64,
     connectivity: []const IndexType,
     offsets: []const IndexType,
     types: []const CellType,
 
     pub fn numberOfPoints(self: UnstructuredMesh) usize {
-        return self.points.len;
+        return self.points.len / DIMENSION;
     }
 
     pub fn numberOfCells(self: UnstructuredMesh) usize {

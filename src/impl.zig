@@ -156,7 +156,7 @@ fn writeContent(
         {
             Utils.openXmlScope(fileWriter, "Points", &.{}) catch std.log.warn("unable to write to file", .{});
             defer Utils.closeXmlScope(fileWriter, "Points") catch std.log.warn("unable to write to file", .{});
-            try writeDataSet(allocator, vtuWriter, "", 3, f64, mesh.points, fileWriter);
+            try writeDataSet(allocator, vtuWriter, "", Vtu.UnstructuredMesh.DIMENSION, f64, mesh.points, fileWriter);
         }
 
         {
