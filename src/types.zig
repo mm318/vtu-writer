@@ -16,8 +16,8 @@ pub const Attribute = struct { []const u8, AttributeValueType };
 
 pub const Attributes = std.ArrayList(Attribute);
 
+pub const Byte = u8;
 pub const HeaderType = usize;
-
 pub const IndexType = i64;
 pub const CellType = i8;
 
