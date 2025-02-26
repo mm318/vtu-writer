@@ -28,7 +28,8 @@ pub fn writeVtu(
             );
         },
         .rawbinarycompressed => {
-            var writer_impl = VtuImpl.CompressedRawBinaryWriter.init();
+            var writer_impl = VtuImpl.CompressedRawBinaryWriter.init(allocator);
+            defer writer_impl.deinit();
             try VtuImpl.writeVtu(
                 allocator,
                 filename,

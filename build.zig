@@ -22,6 +22,12 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    const zlib_dep = b.dependency("zlib", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    lib.root_module.addIncludePath(zlib_dep.artifact("z").getEmittedIncludeTree());
+    lib.linkLibrary(zlib_dep.artifact("z"));
 
     // This declares intent for the shared library to be installed into the
     // standard location when the user invokes the "install" step (the default

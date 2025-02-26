@@ -22,9 +22,21 @@ pub const VtuWriter = union(Vtu.WriteMode) {
         }
     }
 
+    pub fn getAppendedAttributes(self: VtuWriter) []const Vtu.Attribute {
+        switch (self) {
+            inline else => |s| return s.getAppendedAttributes(),
+        }
+    }
+
     pub fn writeData(self: VtuWriter, dataType: type, data: []const dataType, fileWriter: std.fs.File.Writer) !void {
         switch (self) {
             inline else => |s| try s.writeData(dataType, data, fileWriter),
+        }
+    }
+
+    pub fn writeAppended(self: VtuWriter, fileWriter: std.fs.File.Writer) !void {
+        switch (self) {
+            inline else => |s| try s.writeAppended(fileWriter),
         }
     }
 };
@@ -103,6 +115,14 @@ fn writeContent(
                 try writeDataSet(allocator, vtuWriter, "types", 1, Vtu.CellType, mesh.types, fileWriter);
             }
         }
+    }
+
+    const appendedAttributes = vtuWriter.getAppendedAttributes();
+    if (appendedAttributes.len > 0) {
+        Utils.openXmlScope(fileWriter, "AppendedData", appendedAttributes) catch std.log.warn("unable to write to file", .{});
+        defer Utils.closeXmlScope(fileWriter, "AppendedData") catch std.log.warn("unable to write to file", .{});
+        fileWriter.print("_", .{}) catch std.log.warn("unable to write to file", .{});
+        vtuWriter.writeAppended(fileWriter) catch std.log.warn("unable to write to file", .{});
     }
 }
 

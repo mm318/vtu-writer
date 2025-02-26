@@ -3,6 +3,8 @@ const std = @import("std");
 const Vtu = @import("types.zig");
 
 pub const AsciiWriter = struct {
+    const appendedAttributes: []const Vtu.Attribute = &.{};
+
     pub fn init() AsciiWriter {
         return .{};
     }
@@ -20,16 +22,21 @@ pub const AsciiWriter = struct {
         try attributes.appendSlice(&dataAttributes);
     }
 
-    pub fn writeData(
-        self: *const AsciiWriter,
-        dataType: type,
-        data: []const dataType,
-        fileWriter: std.fs.File.Writer,
-    ) !void {
+    pub fn getAppendedAttributes(self: *const AsciiWriter) []const Vtu.Attribute {
+        _ = self;
+        return appendedAttributes;
+    }
+
+    pub fn writeData(self: *const AsciiWriter, dataType: type, data: []const dataType, fileWriter: std.fs.File.Writer) !void {
         _ = self;
         for (data) |datum| {
             try fileWriter.print("{d} ", .{datum});
         }
         try fileWriter.print("\n", .{});
+    }
+
+    pub fn writeAppended(self: *const AsciiWriter, fileWriter: std.fs.File.Writer) !void {
+        _ = self;
+        _ = fileWriter;
     }
 };
