@@ -2,6 +2,9 @@ const std = @import("std");
 
 const Vtu = @import("types.zig");
 const Utils = @import("utils.zig");
+const z = @cImport({
+    @cInclude("zlib.h");
+});
 
 pub const CompressedRawBinaryWriter = struct {
     const appendedAttributes = [_]Vtu.Attribute{.{ "encoding", .{ .str = "raw" } }};
@@ -56,17 +59,72 @@ pub const CompressedRawBinaryWriter = struct {
     }
 
     fn zlibCompressData(
+        allocator: std.mem.Allocator,
         dataType: type,
         data: []const dataType,
         header: *std.ArrayList(Vtu.HeaderType),
         targetBlocks: *std.ArrayList(std.ArrayList(Vtu.Byte)),
         customBlockSize: ?usize,
     ) !void {
-        _ = data;
-        _ = header;
-        _ = targetBlocks;
+        const IntType = z.uLong;
         const blockSize = customBlockSize orelse 32768;
-        _ = blockSize;
+        if (data.len > std.math.maxInt(IntType) or blockSize > std.math.maxInt(IntType)) {
+            std.log.err("Size too large for uLong zlib type.", .{});
+            return error.DataTooLarge;
+        }
+
+        try header.appendNTimes(0, 3);
+
+        if (data.len <= 0) {
+            return;
+        }
+
+        const compressedBuffersize = z.compressBound(blockSize);
+        const buffer = try allocator.alloc(u8, compressedBuffersize);
+        defer allocator.free(buffer);
+
+        const Closure = struct {
+            const Self = @This();
+            buffer: []Vtu.Byte,
+            currentByte: [*c]const Vtu.Byte,
+            header: *std.ArrayList(Vtu.HeaderType),
+            targetBlocks: *std.ArrayList(std.ArrayList(Vtu.Byte)),
+
+            pub fn compressBlock(self: *Self, numberOfBytesInBlock: IntType) !void {
+                var compressedLength: IntType = self.buffer.len;
+                const errorCode = z.compress(self.buffer.ptr, &compressedLength, self.currentByte, numberOfBytesInBlock);
+                if (errorCode != z.Z_OK) {
+                    std.log.err("Error in zlib compression (code {}).", .{errorCode});
+                    return error.CompressionError;
+                }
+
+                try self.header.append(compressedLength);
+
+                var newBlock = std.ArrayList(Vtu.Byte).init(self.targetBlocks.allocator);
+                try newBlock.appendSlice(self.buffer[0..compressedLength]);
+                try self.targetBlocks.append(newBlock);
+
+                self.currentByte += numberOfBytesInBlock;
+            }
+        };
+        var closure = Closure{
+            .buffer = buffer,
+            .currentByte = @ptrCast(data.ptr), // TODO: this assumes little-endian
+            .header = header,
+            .targetBlocks = targetBlocks,
+        };
+
+        const numberOfBytes: IntType = data.len * @sizeOf(dataType);
+        const numberOfBlocks: IntType = (numberOfBytes - 1) / blockSize + 1;
+        for (0..numberOfBlocks - 1) |_| {
+            try closure.compressBlock(blockSize);
+        }
+        const remainder: IntType = numberOfBytes - (numberOfBlocks - 1) * blockSize;
+        try closure.compressBlock(remainder);
+
+        header.items[0] = header.items.len - 3;
+        header.items[1] = blockSize;
+        header.items[2] = remainder;
     }
 
     pub fn writeData(
@@ -79,7 +137,7 @@ pub const CompressedRawBinaryWriter = struct {
 
         var header = std.ArrayList(Vtu.HeaderType).init(self.headers.allocator);
         var compressedBlocks = std.ArrayList(std.ArrayList(Vtu.Byte)).init(self.appendedData.allocator);
-        zlibCompressData(dataType, data, &header, &compressedBlocks, null) catch |err| {
+        zlibCompressData(self.appendedData.allocator, dataType, data, &header, &compressedBlocks, null) catch |err| {
             header.deinit();
             compressedBlocks.deinit();
             return err;
