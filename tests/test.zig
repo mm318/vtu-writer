@@ -1,8 +1,10 @@
 const std = @import("std");
-const builtin = @import("builtin");
 
-const vtu_writer = @import("vtu_writer");
+pub const hexahedras3D_test = @import("hexahedras3D_test.zig");
+pub const icosahedron3D_test = @import("icosahedron3D_test.zig");
+pub const pyramids3D_test = @import("pyramids3D_test.zig");
+pub const square2D_test = @import("square2D_test.zig");
 
-test "hello world" {
-    std.log.info("hello world!", .{});
+test {
+    std.testing.refAllDecls(@This());
 }

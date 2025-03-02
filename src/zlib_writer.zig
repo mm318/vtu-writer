@@ -161,12 +161,12 @@ pub const CompressedRawBinaryWriter = struct {
                     try fileWriter.writeByte(byte);
                 }
             }
-
             for (compressedBlocks.items) |compressedBlock| {
                 for (compressedBlock.items) |byte| {
                     try fileWriter.writeByte(byte);
                 }
             }
         }
+        try fileWriter.writeByte('\n');
     }
 };
