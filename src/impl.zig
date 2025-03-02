@@ -28,13 +28,13 @@ pub const VtuWriter = union(Vtu.WriteMode) {
         }
     }
 
-    pub fn writeData(self: VtuWriter, dataType: type, data: []const dataType, fileWriter: std.fs.File.Writer) !void {
+    pub fn writeData(self: VtuWriter, dataType: type, data: []const dataType, fileWriter: std.io.AnyWriter) !void {
         switch (self) {
             inline else => |s| try s.writeData(dataType, data, fileWriter),
         }
     }
 
-    pub fn writeAppended(self: VtuWriter, fileWriter: std.fs.File.Writer) !void {
+    pub fn writeAppended(self: VtuWriter, fileWriter: std.io.AnyWriter) !void {
         switch (self) {
             inline else => |s| try s.writeAppended(fileWriter),
         }
@@ -52,7 +52,8 @@ pub fn writeVtu(
     const output = try cwd.createFile(filename, .{});
     defer output.close();
 
-    try output.writer().print("<?xml version=\"1.0\"?>\n", .{});
+    const fileWriter = output.writer().any();
+    try fileWriter.print("<?xml version=\"1.0\"?>\n", .{});
 
     var headerAttributes = Vtu.Attributes.init(allocator);
     defer headerAttributes.deinit();
@@ -64,10 +65,10 @@ pub fn writeVtu(
     });
     try vtuWriter.addHeaderAttributes(&headerAttributes);
 
-    Utils.openXmlScope(output.writer(), "VTKFile", headerAttributes.items) catch std.log.warn("unable to write to file", .{});
-    defer Utils.closeXmlScope(output.writer(), "VTKFile") catch std.log.warn("unable to write to file", .{});
+    Utils.openXmlScope(fileWriter, "VTKFile", headerAttributes.items) catch std.log.warn("unable to write to file", .{});
+    defer Utils.closeXmlScope(fileWriter, "VTKFile") catch std.log.warn("unable to write to file", .{});
 
-    try writeContent(allocator, vtuWriter, mesh, dataSets, output.writer());
+    try writeContent(allocator, vtuWriter, mesh, dataSets, fileWriter);
 }
 
 fn writeContent(
@@ -75,7 +76,7 @@ fn writeContent(
     vtuWriter: VtuWriter,
     mesh: Vtu.UnstructuredMesh,
     dataSets: []const Vtu.DataSet,
-    fileWriter: std.fs.File.Writer,
+    fileWriter: std.io.AnyWriter,
 ) !void {
     {
         Utils.openXmlScope(fileWriter, "UnstructuredGrid", &.{}) catch std.log.warn("unable to write to file", .{});
@@ -157,7 +158,7 @@ fn writeDataSet(
     ncomponents: usize,
     dataType: type,
     data: []const dataType,
-    fileWriter: std.fs.File.Writer,
+    fileWriter: std.io.AnyWriter,
 ) !void {
     const attributes = try getDataSetHeader(allocator, vtuWriter, name, ncomponents, dataType);
     defer attributes.deinit();
@@ -191,7 +192,7 @@ fn writeDataSets(
     vtuWriter: VtuWriter,
     dataSets: []const Vtu.DataSet,
     dataSetType: Vtu.DataSetType,
-    fileWriter: std.fs.File.Writer,
+    fileWriter: std.io.AnyWriter,
 ) !void {
     for (dataSets) |dataSet| {
         if (dataSet[1] == dataSetType) {

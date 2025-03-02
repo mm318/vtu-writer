@@ -25,7 +25,7 @@ pub fn endianness() []const u8 {
 }
 
 pub fn writeXmlTag(
-    writer: std.fs.File.Writer,
+    writer: std.io.AnyWriter,
     tagName: []const u8,
     attributes: []const Vtu.Attribute,
     tagEnd: []const u8,
@@ -44,14 +44,14 @@ pub fn writeXmlTag(
     try writer.print("{s}\n", .{tagEnd});
 }
 
-pub fn openXmlScope(writer: std.fs.File.Writer, tagName: []const u8, attributes: []const Vtu.Attribute) !void {
+pub fn openXmlScope(writer: std.io.AnyWriter, tagName: []const u8, attributes: []const Vtu.Attribute) !void {
     try writeXmlTag(writer, tagName, attributes, ">");
 }
 
-pub fn closeXmlScope(writer: std.fs.File.Writer, tagName: []const u8) !void {
+pub fn closeXmlScope(writer: std.io.AnyWriter, tagName: []const u8) !void {
     try writer.print("</{s}>\n", .{tagName});
 }
 
-pub fn emptyXmlScope(writer: std.fs.File.Writer, tagName: []const u8, attributes: []const Vtu.Attribute) !void {
+pub fn emptyXmlScope(writer: std.io.AnyWriter, tagName: []const u8, attributes: []const Vtu.Attribute) !void {
     try writeXmlTag(writer, tagName, attributes, " />");
 }

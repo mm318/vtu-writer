@@ -131,7 +131,7 @@ pub const CompressedRawBinaryWriter = struct {
         self: *CompressedRawBinaryWriter,
         dataType: type,
         data: []const dataType,
-        fileWriter: std.fs.File.Writer,
+        fileWriter: std.io.AnyWriter,
     ) !void {
         _ = fileWriter;
 
@@ -152,7 +152,7 @@ pub const CompressedRawBinaryWriter = struct {
         self.appendedData.append(compressedBlocks) catch compressedBlocks.deinit();
     }
 
-    pub fn writeAppended(self: *const CompressedRawBinaryWriter, fileWriter: std.fs.File.Writer) !void {
+    pub fn writeAppended(self: *const CompressedRawBinaryWriter, fileWriter: std.io.AnyWriter) !void {
         for (self.headers.items, self.appendedData.items) |header, compressedBlocks| {
             for (header.items) |data| {
                 const numberOfBytes = @sizeOf(@TypeOf(data));
