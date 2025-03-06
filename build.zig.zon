@@ -1,5 +1,6 @@
 .{
-    .name = "vtu_writer",
+    .name = .vtu_writer,
+
     .version = "0.0.1",
 
     .dependencies = .{
@@ -17,4 +18,6 @@
         "README.md",
         "LICENSE",
     },
+
+    .fingerprint = 0xa2dd70fba976298c,
 }

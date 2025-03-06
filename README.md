@@ -34,4 +34,4 @@ zig fmt .
 
 ## Requirements
 
-Developed using Ubuntu 20.04 and zig 0.14.0-dev.1911+3bf89f55c (2024.10.0-mach).
+Developed using Ubuntu 20.04 and zig 0.14.0.

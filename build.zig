@@ -15,34 +15,32 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    // Creates a step for building a shared library
-    const lib = b.addStaticLibrary(.{
-        .name = "vtu_writer",
-        .root_source_file = b.path("src/lib.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
     const zlib_dep = b.dependency("zlib", .{
         .target = target,
         .optimize = optimize,
     });
-    lib.root_module.addIncludePath(zlib_dep.artifact("z").getEmittedIncludeTree());
-    lib.linkLibrary(zlib_dep.artifact("z"));
+    const zlib = zlib_dep.artifact("z");
 
-    // This declares intent for the shared library to be installed into the
-    // standard location when the user invokes the "install" step (the default
-    // step when running `zig build`).
-    b.installArtifact(lib);
+    // Creates a step for building a shared library
+    const vtu_writer = b.createModule(.{
+        .root_source_file = b.path("src/lib.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    vtu_writer.addIncludePath(zlib.getEmittedIncludeTree());
+    vtu_writer.linkLibrary(zlib);
 
     // Creates a step for demoing. This only builds the demo test executable
     // but does not run it.
     const demo = b.addExecutable(.{
         .name = "vtu_writer_demo",
-        .root_source_file = b.path("tests/demo.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tests/demo.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
-    demo.root_module.addImport("vtu_writer", &lib.root_module);
+    demo.root_module.addImport("vtu_writer", vtu_writer);
 
     const run_demo = b.addRunArtifact(demo);
     const demo_cmdline_target = b.step("run", "Run the demo test");
@@ -51,11 +49,14 @@ pub fn build(b: *std.Build) void {
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
     const tests = b.addTest(.{
-        .root_source_file = b.path("tests/test.zig"),
-        .target = target,
-        .optimize = optimize,
+        .name = "vtu_writer_tests",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tests/test.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
-    tests.root_module.addImport("vtu_writer", &lib.root_module);
+    tests.root_module.addImport("vtu_writer", vtu_writer);
 
     const run_unit_tests = b.addRunArtifact(tests);
     run_unit_tests.has_side_effects = true;
