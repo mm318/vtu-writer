@@ -39,7 +39,7 @@ pub fn main() !void {
     const offsets = [_]VtuWriter.IndexType{ 4, 8, 12, 16, 20, 24 };
 
     // Cell types of each cell, see [1]
-    const types = [_]VtuWriter.CellType{ 9, 9, 9, 9, 9, 9 };
+    const types = [_]VtuWriter.CellType{ .VTK_QUAD, .VTK_QUAD, .VTK_QUAD, .VTK_QUAD, .VTK_QUAD, .VTK_QUAD };
 
     const mesh = VtuWriter.UnstructuredMesh{
         .points = &points,

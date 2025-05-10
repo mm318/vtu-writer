@@ -7,6 +7,7 @@ pub const StringStringMap = std.StringHashMap([]const u8);
 
 pub fn dataTypeString(dataType: type) []const u8 {
     const result = switch (@typeInfo(dataType)) {
+        .@"enum" => |info| return dataTypeString(info.tag_type),
         .int => |info| switch (info.signedness) {
             .signed => "Int",
             .unsigned => "UInt",

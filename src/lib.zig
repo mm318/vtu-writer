@@ -9,6 +9,8 @@ pub const UnstructuredMesh = Vtu.UnstructuredMesh;
 pub const DataSetType = Vtu.DataSetType;
 pub const DataSet = Vtu.DataSet;
 
+pub const UnstructuredMeshBuilder = @import("mesh_builder.zig");
+
 pub fn writeVtu(
     allocator: std.mem.Allocator,
     filename: []const u8,

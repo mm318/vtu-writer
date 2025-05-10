@@ -19,7 +19,23 @@ pub const Attributes = std.ArrayList(Attribute);
 pub const Byte = u8;
 pub const HeaderType = usize;
 pub const IndexType = i64;
-pub const CellType = i8;
+pub const CellType = enum(i8) {
+    VTK_QUAD = 9,
+    VTK_TETRA = 10,
+    VTK_VOXEL = 11,
+    VTK_HEXAHEDRON = 12,
+    VTK_PYRAMID = 14,
+};
+
+pub fn numCellPoints(cell_type: CellType) usize {
+    return switch (cell_type) {
+        .VTK_QUAD => 4,
+        .VTK_TETRA => 4,
+        .VTK_VOXEL => 8,
+        .VTK_HEXAHEDRON => 8,
+        .VTK_PYRAMID => 5,
+    };
+}
 
 pub const UnstructuredMesh = struct {
     pub const DIMENSION = 3;
