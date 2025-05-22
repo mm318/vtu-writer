@@ -33,7 +33,7 @@ pub const AsciiWriter = struct {
             switch (@typeInfo(dataType)) {
                 .@"enum" => try fileWriter.print("{d} ", .{@intFromEnum(datum)}),
                 .int => try fileWriter.print("{d} ", .{datum}),
-                .float => try fileWriter.print("{} ", .{datum}),
+                .float => try fileWriter.print("{d} ", .{datum}),
                 else => @compileError("unsupported data type"),
             }
         }

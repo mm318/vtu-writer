@@ -18,35 +18,35 @@ pub fn main() !void {
         if (deinit_status == .leak) std.log.warn("memory leaked!", .{});
     }
 
+    var mesh_builder = VtuWriter.UnstructuredMeshBuilder.init(allocator);
+    defer mesh_builder.deinit();
+
+    try mesh_builder.reservePoints(12);
+    try mesh_builder.reserveCells(.VTK_QUAD, 6);
+
     // Create data for 3x2 quad mesh: (x, y, z) coordinates of mesh vertices
-    const points = [_]f64{
-        0.0, 0.0, 0.5, 0.0, 0.3, 0.5, 0.0, 0.7, 0.5, 0.0, 1.0, 0.5, // 0,  1,  2,  3
-        0.5, 0.0, 0.5, 0.5, 0.3, 0.5, 0.5, 0.7, 0.5, 0.5, 1.0, 0.5, // 4,  5,  6,  7
-        1.0, 0.0, 0.5, 1.0, 0.3, 0.5, 1.0, 0.7, 0.5, 1.0, 1.0, 0.5, // 8,  9, 10, 11
-    };
+    _ = try mesh_builder.addPoint(.{ 0.0, 0.0, 0.5 }); // point 0
+    _ = try mesh_builder.addPoint(.{ 0.0, 0.3, 0.5 }); // point 1
+    _ = try mesh_builder.addPoint(.{ 0.0, 0.7, 0.5 }); // point 2
+    _ = try mesh_builder.addPoint(.{ 0.0, 1.0, 0.5 }); // point 3
+    _ = try mesh_builder.addPoint(.{ 0.5, 0.0, 0.5 }); // point 4
+    _ = try mesh_builder.addPoint(.{ 0.5, 0.3, 0.5 }); // point 5
+    _ = try mesh_builder.addPoint(.{ 0.5, 0.7, 0.5 }); // point 6
+    _ = try mesh_builder.addPoint(.{ 0.5, 1.0, 0.5 }); // point 7
+    _ = try mesh_builder.addPoint(.{ 1.0, 0.0, 0.5 }); // point 8
+    _ = try mesh_builder.addPoint(.{ 1.0, 0.3, 0.5 }); // point 9
+    _ = try mesh_builder.addPoint(.{ 1.0, 0.7, 0.5 }); // point 10
+    _ = try mesh_builder.addPoint(.{ 1.0, 1.0, 0.5 }); // point 11
 
     // Vertex indices of all cells
-    const connectivity = [_]VtuWriter.IndexType{
-        0, 4, 5, 1, // 0
-        1, 5, 6, 2, // 1
-        2, 6, 7, 3, // 2
-        4, 8, 9, 5, // 3
-        5, 9, 10, 6, // 4
-        6, 10, 11, 7, // 5
-    };
+    try mesh_builder.addCell(.VTK_QUAD, .{ 0, 4, 5, 1 }); // cell 0
+    try mesh_builder.addCell(.VTK_QUAD, .{ 1, 5, 6, 2 }); // cell 1
+    try mesh_builder.addCell(.VTK_QUAD, .{ 2, 6, 7, 3 }); // cell 2
+    try mesh_builder.addCell(.VTK_QUAD, .{ 4, 8, 9, 5 }); // cell 3
+    try mesh_builder.addCell(.VTK_QUAD, .{ 5, 9, 10, 6 }); // cell 4
+    try mesh_builder.addCell(.VTK_QUAD, .{ 6, 10, 11, 7 }); // cell 5
 
-    // Separate cells in connectivity array
-    const offsets = [_]VtuWriter.IndexType{ 4, 8, 12, 16, 20, 24 };
-
-    // Cell types of each cell, see [1]
-    const types = [_]VtuWriter.CellType{ .VTK_QUAD, .VTK_QUAD, .VTK_QUAD, .VTK_QUAD, .VTK_QUAD, .VTK_QUAD };
-
-    const mesh = VtuWriter.UnstructuredMesh{
-        .points = &points,
-        .connectivity = &connectivity,
-        .offsets = &offsets,
-        .types = &types,
-    };
+    const mesh = mesh_builder.getUnstructuredMesh();
 
     // Create some data associated to points and cells
     const pointData = [_]f64{ 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0 };
