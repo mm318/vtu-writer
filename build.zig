@@ -22,7 +22,7 @@ pub fn build(b: *std.Build) void {
     const zlib = zlib_dep.artifact("z");
 
     // Creates a step for building a shared library
-    const vtu_writer = b.createModule(.{
+    const vtu_writer = b.addModule("vtu_writer", .{
         .root_source_file = b.path("src/lib.zig"),
         .target = target,
         .optimize = optimize,
