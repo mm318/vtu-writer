@@ -30,7 +30,12 @@ pub const AsciiWriter = struct {
     pub fn writeData(self: *const AsciiWriter, dataType: type, data: []const dataType, fileWriter: std.io.AnyWriter) !void {
         _ = self;
         for (data) |datum| {
-            try fileWriter.print("{d} ", .{datum});
+            switch (@typeInfo(dataType)) {
+                .@"enum" => try fileWriter.print("{d} ", .{@intFromEnum(datum)}),
+                .int => try fileWriter.print("{d} ", .{datum}),
+                .float => try fileWriter.print("{d} ", .{datum}),
+                else => @compileError("unsupported data type"),
+            }
         }
         try fileWriter.print("\n", .{});
     }
