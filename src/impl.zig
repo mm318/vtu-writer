@@ -67,8 +67,11 @@ pub fn writeVtu(
     });
     try vtuWriter.addHeaderAttributes(&headerAttributes);
 
-    Utils.openXmlScope(file, "VTKFile", headerAttributes.list.items) catch std.log.warn("unable to write to file", .{});
-    defer Utils.closeXmlScope(file, "VTKFile") catch std.log.warn("unable to write to file", .{});
+    Utils.openXmlScope(file, "VTKFile", headerAttributes.items()) catch std.log.warn("unable to write to file", .{});
+    defer {
+        Utils.closeXmlScope(file, "VTKFile") catch std.log.warn("unable to write to file", .{});
+        file.flush() catch unreachable; // this is the end of the file
+    }
 
     try writeContent(allocator, vtuWriter, mesh, dataSets, file);
 }
@@ -166,7 +169,7 @@ fn writeDataSet(
     defer attributes.deinit();
 
     var appended = false;
-    for (attributes.list.items) |attribute| {
+    for (attributes.items()) |attribute| {
         if (std.mem.eql(u8, attribute[0], "format")) {
             switch (attribute[1]) {
                 .str => |format| {
@@ -180,10 +183,10 @@ fn writeDataSet(
     }
 
     if (appended) {
-        Utils.emptyXmlScope(fileWriter, "DataArray", attributes.list.items) catch std.log.warn("unable to write to file", .{});
+        Utils.emptyXmlScope(fileWriter, "DataArray", attributes.items()) catch std.log.warn("unable to write to file", .{});
         vtuWriter.writeData(dataType, data, fileWriter) catch std.log.warn("unable to write to file", .{});
     } else {
-        Utils.openXmlScope(fileWriter, "DataArray", attributes.list.items) catch std.log.warn("unable to write to file", .{});
+        Utils.openXmlScope(fileWriter, "DataArray", attributes.items()) catch std.log.warn("unable to write to file", .{});
         defer Utils.closeXmlScope(fileWriter, "DataArray") catch std.log.warn("unable to write to file", .{});
         vtuWriter.writeData(dataType, data, fileWriter) catch std.log.warn("unable to write to file", .{});
     }

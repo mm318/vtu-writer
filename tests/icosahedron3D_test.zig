@@ -58,8 +58,8 @@ const mesh = blk: {
         48, 52, 56, 60, 64, 68, 72, 76, 80, 85, //
     };
     const types = [_]VtuWriter.CellType{
-        10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, //
-        10, 10, 10, 10, 10, 10, 10, 10, 10, 14, //
+        .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA,   .VTK_TETRA,
+        .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_TETRA, .VTK_PYRAMID,
     };
 
     break :blk VtuWriter.UnstructuredMesh{

@@ -19,7 +19,7 @@ const mesh = blk: {
     };
 
     const offsets = [_]VtuWriter.IndexType{ 4, 8, 12, 16, 20, 24 };
-    const types = [_]VtuWriter.CellType{ 9, 9, 9, 9, 9, 9 };
+    const types = [_]VtuWriter.CellType{ .VTK_QUAD, .VTK_QUAD, .VTK_QUAD, .VTK_QUAD, .VTK_QUAD, .VTK_QUAD };
 
     break :blk VtuWriter.UnstructuredMesh{
         .points = &points,

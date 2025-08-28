@@ -56,3 +56,43 @@ pub fn closeXmlScope(writer: *std.io.Writer, tagName: []const u8) !void {
 pub fn emptyXmlScope(writer: *std.io.Writer, tagName: []const u8, attributes: []const Vtu.Attribute) !void {
     try writeXmlTag(writer, tagName, attributes, " />");
 }
+
+test "ScopedXmlTag_test" {
+    const allocator = std.testing.allocator;
+
+    var allocating_writer = std.Io.Writer.Allocating.init(allocator);
+    defer allocating_writer.deinit();
+    const writer = &allocating_writer.writer;
+
+    {
+        openXmlScope(writer, "Test1", &.{
+            .{ "attr1", .{ .str = "7" } },
+            .{ "attr2", .{ .str = "nice" } },
+        }) catch std.log.warn("unable to write to file", .{});
+        defer closeXmlScope(writer, "Test1") catch std.log.warn("unable to write to file", .{});
+
+        {
+            openXmlScope(writer, "Test2", &.{
+                .{ "attr3", .{ .str = "43.32" } },
+                .{ "attr4", .{ .str = "[2, 3]" } },
+            }) catch std.log.warn("unable to write to file", .{});
+            defer closeXmlScope(writer, "Test2") catch std.log.warn("unable to write to file", .{});
+
+            try writer.print("dadatata\n", .{});
+        }
+    }
+
+    const expected_data =
+        \\<Test1 attr1="7" attr2="nice">
+        \\<Test2 attr3="43.32" attr4="[2, 3]">
+        \\dadatata
+        \\</Test2>
+        \\</Test1>
+        \\
+    ;
+
+    // std.log.err("{s}\nlen={}", .{written_data.items, written_data.items.len});
+    // std.log.err("{s}\nlen={}", .{expected_data, expected_data.len});
+
+    std.debug.assert(std.mem.eql(u8, allocating_writer.written(), expected_data));
+}

@@ -21,7 +21,7 @@ pub fn build(b: *std.Build) void {
     });
     const zlib = zlib_dep.artifact("z");
 
-    // Creates a step for building a shared library
+    // Defines the main module
     const vtu_writer = b.addModule("vtu_writer", .{
         .root_source_file = b.path("src/lib.zig"),
         .target = target,
@@ -46,23 +46,31 @@ pub fn build(b: *std.Build) void {
     const demo_cmdline_target = b.step("run", "Run the demo test");
     demo_cmdline_target.dependOn(&run_demo.step);
 
-    // Creates a step for unit testing. This only builds the test executable
+    // Creates a step for unit tests. This only builds the test executable
     // but does not run it.
-    const tests = b.addTest(.{
-        .name = "vtu_writer_tests",
+    const unit_tests = b.addTest(.{
+        .name = "vtu_unit_tests",
+        .root_module = vtu_writer,
+    });
+    const run_unit_tests = b.addRunArtifact(unit_tests);
+
+    // Creates a step for integration tests. This only builds the test executable
+    // but does not run it.
+    const integ_tests = b.addTest(.{
+        .name = "vtu_integ_tests",
         .root_module = b.createModule(.{
             .root_source_file = b.path("tests/test.zig"),
             .target = target,
             .optimize = optimize,
         }),
     });
-    tests.root_module.addImport("vtu_writer", vtu_writer);
-
-    const run_unit_tests = b.addRunArtifact(tests);
-    run_unit_tests.has_side_effects = true;
+    integ_tests.root_module.addImport("vtu_writer", vtu_writer);
+    const run_integ_tests = b.addRunArtifact(integ_tests);
+    run_integ_tests.has_side_effects = true;
 
     // This exposes a `test` step to the `zig build --help` menu
     // providing a way for the user to request running the unit tests.
-    const test_cmdline_target = b.step("test", "Run the comprehensive tests");
+    const test_cmdline_target = b.step("test", "Run the comprehensive set of tests");
     test_cmdline_target.dependOn(&run_unit_tests.step);
+    test_cmdline_target.dependOn(&run_integ_tests.step);
 }

@@ -27,12 +27,16 @@ pub const Attributes = struct {
         };
     }
 
+    pub fn items(self: *const Self) []const Attribute {
+        return self.list.items;
+    }
+
     pub fn append(self: *Self, item: Attribute) !void {
         try self.list.append(self.allocator, item);
     }
 
-    pub fn appendSlice(self: *Self, items: []const Attribute) !void {
-        try self.list.appendSlice(self.allocator, items);
+    pub fn appendSlice(self: *Self, new_items: []const Attribute) !void {
+        try self.list.appendSlice(self.allocator, new_items);
     }
 
     pub fn deinit(self: *Self) void {

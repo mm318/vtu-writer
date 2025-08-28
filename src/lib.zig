@@ -42,3 +42,7 @@ pub fn writeVtu(
         },
     }
 }
+
+test {
+    std.testing.refAllDecls(@This());
+}

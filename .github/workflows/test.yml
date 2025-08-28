@@ -35,6 +35,6 @@ jobs:
         run: |
           zig build -Doptimize=${{ matrix.optimizaton }} run
 
-      - name: Build and Run Unit Tests
+      - name: Build and Run Tests
         run: |
           zig build -Doptimize=${{ matrix.optimizaton }} test --summary all
