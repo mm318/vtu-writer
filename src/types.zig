@@ -14,7 +14,31 @@ pub const AttributeValueType = union(enum) {
 
 pub const Attribute = struct { []const u8, AttributeValueType };
 
-pub const Attributes = std.ArrayList(Attribute);
+pub const Attributes = struct {
+    const Self = @This();
+
+    allocator: std.mem.Allocator,
+    list: std.ArrayList(Attribute),
+
+    pub fn initCapacity(allocator: std.mem.Allocator, num: usize) !Self {
+        return .{
+            .allocator = allocator,
+            .list = try std.ArrayList(Attribute).initCapacity(allocator, num),
+        };
+    }
+
+    pub fn append(self: *Self, item: Attribute) !void {
+        try self.list.append(self.allocator, item);
+    }
+
+    pub fn appendSlice(self: *Self, items: []const Attribute) !void {
+        try self.list.appendSlice(self.allocator, items);
+    }
+
+    pub fn deinit(self: *Self) void {
+        self.list.deinit(self.allocator);
+    }
+};
 
 pub const Byte = u8;
 pub const HeaderType = usize;

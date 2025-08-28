@@ -27,7 +27,7 @@ pub const AsciiWriter = struct {
         return appendedAttributes;
     }
 
-    pub fn writeData(self: *const AsciiWriter, dataType: type, data: []const dataType, fileWriter: std.io.AnyWriter) !void {
+    pub fn writeData(self: *const AsciiWriter, dataType: type, data: []const dataType, fileWriter: *std.io.Writer) !void {
         _ = self;
         for (data) |datum| {
             switch (@typeInfo(dataType)) {
@@ -40,7 +40,7 @@ pub const AsciiWriter = struct {
         try fileWriter.print("\n", .{});
     }
 
-    pub fn writeAppended(self: *const AsciiWriter, fileWriter: std.io.AnyWriter) !void {
+    pub fn writeAppended(self: *const AsciiWriter, fileWriter: *std.io.Writer) !void {
         _ = self;
         _ = fileWriter;
     }
